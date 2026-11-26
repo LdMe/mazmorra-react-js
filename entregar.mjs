@@ -10,10 +10,14 @@
     npm run probar (o entregar)                lista las tareas
 
   Profesorado (en la versión con la solución):
-    npm run entregar -- --preparar             rellena ikasbot.json y genera en ikasbot/ los junit y las huellas
+    npm run entregar -- --preparar             rellena ikasbot.json, genera en ikasbot/ los junit y las huellas y,
+                                               con marcas, la copia del alumnado (en TypeScript, también la de JS)
+    npm run entregar -- --subir [tarea…]       --preparar y, si todo va bien, crea o actualiza las tareas en IkasBot
+                                               (con IKASBOT_TOKEN_DOCENTE en .env; --forzar si ya tienen entregas)
     npm run entregar -- --huellas [tarea]      solo las huellas de los tests, para pegarlas en la tarea
 
-  - Tu token va en el archivo .env (IKASBOT_TOKEN=ikb_…), que nunca se sube a git.
+  - Tu token va en el archivo .env (IKASBOT_TOKEN=ikb_…), que nunca se sube a git. El de profesorado, en IKASBOT_TOKEN_DOCENTE.
+  - El enunciado de cada tarea, si lo hay, en enunciados/<tarea>.md; su tema, en "tema" (de la tarea o general).
   - Cada carpeta de tests/ es una tarea (tests/strings-01/… → strings-01). Su código son los archivos de src/
     que importan sus tests. Lo que se escriba a mano en ikasbot.json (titulo, codigo, comando…) se respeta.
   - Envía también la huella (sha256) de cada archivo de test: si no coincide con la original, IkasBot avisa.
@@ -24,8 +28,14 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { dirname, join, relative, sep } from 'node:path';
 
+// Verde/rojo solo si se escribe en una terminal (no en archivos ni tuberías) y sin NO_COLOR.
+const paint = (code, stream) => (text) => (stream.isTTY && !process.env.NO_COLOR ? `\x1b[${code}m${text}\x1b[0m` : text);
+const green = paint(32, process.stdout);
+const red = paint(31, process.stdout);
+const mark = (ok) => (ok ? green('✓') : red('✗'));
+
 const fail = (msg) => {
-  console.error(`\n✗ ${msg}`);
+  console.error(`\n${paint(31, process.stderr)('✗')} ${msg}`);
   process.exit(1);
 };
 const git = (cmd) => {
@@ -142,7 +152,12 @@ export function studentText(file, text, comments) {
 
   // Archivo completo
   if (firstMark?.mark === 'SOLO SOLUCION' || firstMark?.mark === 'SOLO JS') return { out: null, marked: true, gaps: 0, errors };
-  if (firstMark?.mark === 'SOLO TS') return { out: lines.filter((_, i) => i !== first).join(eol), marked: true, gaps: 0, errors };
+  if (firstMark?.mark === 'SOLO TS') {
+    // Sin la marca, y con sus bloques SOLUCION … FIN como cualquier otro archivo (los errores, con su línea de verdad)
+    const r = studentText(file, lines.filter((_, i) => i !== first).join(eol), comments);
+    const at = (n) => (Number(n) > first ? Number(n) + 1 : Number(n));
+    return { ...r, marked: true, errors: r.errors.map((e) => e.replace(/^(.*?):(\d+):/, (m, f, n) => `${f}:${at(n)}:`)) };
+  }
   if (firstMark?.mark === 'SOLO ENUNCIADO') {
     const out = lines.slice(first + 1).map((l, k) => {
       const u = uncomment(l, comments);
@@ -203,7 +218,7 @@ export function solutionText(text, comments) {
   const first = lines.findIndex((l) => l.trim());
   const firstMark = first >= 0 ? markOf(lines[first], comments, true)?.mark : null;
   if (firstMark === 'SOLO ENUNCIADO') return null;
-  if (firstMark?.startsWith('SOLO')) return lines.filter((_, i) => i !== first).join(eol);
+  if (firstMark?.startsWith('SOLO')) lines.splice(first, 1); // sin la marca, y con sus bloques como cualquier otro
   const out = [];
   let state = null;
   for (const line of lines) {
@@ -294,7 +309,8 @@ if (isMain) await main();
 
 async function main() {
   // 1. Configuración: ikasbot.json (del proyecto) y .env (tuyo)
-  const preparing = process.argv[2] === '--preparar';
+  const uploading = process.argv[2] === '--subir';
+  const preparing = process.argv[2] === '--preparar' || uploading;
   let config = {};
   if (existsSync('ikasbot.json')) {
     try {
@@ -406,6 +422,12 @@ async function main() {
       else delete next.codigo;
       // El comando de tipos solo si no hay uno propio (en la tarea o, si no es el de Vitest, en general)
       if (f.comando && !m.comando && (!config.comando || config.comando === VITEST)) next.comando = f.comando;
+      // El enunciado: enunciados/<tarea>.md si existe (o el que se escriba a mano)
+      if (next.enunciado && !existsSync(next.enunciado)) {
+        notes.push(`${code}: ${next.enunciado} ya no existe: se quita de "enunciado"`);
+        delete next.enunciado;
+      }
+      if (!next.enunciado && existsSync(`enunciados/${code}.md`)) next.enunciado = `enunciados/${code}.md`;
       out[code] = next;
     }
     return { tareas: out, notes };
@@ -426,6 +448,22 @@ async function main() {
     Object.entries(tasks)
       .filter(([c]) => !only || c === only)
       .flatMap(([c, t]) => [`# ${c}`, ...testsOf(t).filter((f) => !skipMissing || existsSync(f)).map((f) => `${testHash(f)}  ${f}`)]);
+  /** El .env (sin pisar las variables que ya existan). Nunca debe estar en git: el token es como una contraseña. */
+  const loadEnv = () => {
+    if (git('ls-files .env')) {
+      fail(
+        'Tu archivo .env está subido a git y tu token es visible.\n' +
+          '  1. En IkasBot, Perfil → Tokens de API: revoca ese token y crea otro.\n' +
+          '  2. Sácalo de git: git rm --cached .env && git commit -m "Quita .env"\n' +
+          '  3. Comprueba que .gitignore contiene la línea .env',
+      );
+    }
+    if (!existsSync('.env')) return;
+    for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/i);
+      if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
+  };
   const commandOf = (task) => (task.comando || config.comando || VITEST).replace('{tests}', testsOf(task).map((f) => `"${f}"`).join(' '));
   const junitOf = (task) => task.junit || config.junit || 'junit.xml';
 
@@ -440,6 +478,11 @@ async function main() {
   /* ---------- Profesorado: --preparar ---------- */
 
   if (preparing) {
+    // Con --subir: las tareas que se suben (todas, o las que se digan) y --forzar
+    const force = process.argv.includes('--forzar');
+    const only = process.argv.slice(3).filter((a) => a !== '--forzar');
+    for (const c of only) if (!tasks[c]) fail(`La tarea «${c}» no está en ikasbot.json ni en tests/.`);
+
     // 0. Marcas: se revisan antes de escribir nada. Con errores, no se genera nada.
     const plan = studentPlan();
     if (plan.errors.length) {
@@ -587,13 +630,102 @@ async function main() {
       }
     }
     for (const w of found.warnings) console.log(`⚠ ${w}`);
-    console.log(`
-Para cada tarea, en IkasBot (el código de la tarea tiene que ser el de la carpeta):
+    if (!uploading) {
+      console.log(`
+Para crear o actualizar las tareas en IkasBot: npm run entregar -- --subir (con tu token de profesorado en .env).
+O a mano, en cada tarea (el código de la tarea tiene que ser el de la carpeta):
   · «Importar tests…» con ikasbot/junit/<tarea>.xml
-  · en las huellas de los tests, las líneas de su «# tarea» en ikasbot/huellas.txt
-ikasbot/ es solo para ti: está en .gitignore y no va al repositorio del alumnado. ikasbot.json sí.`);
+  · en las huellas de los tests, las líneas de su «# tarea» en ikasbot/huellas.txt`);
+    }
+    console.log('ikasbot/ es solo para ti: está en .gitignore y no va al repositorio del alumnado. ikasbot.json sí.');
+    const failed = rows.some((r) => r.tests === '—') || failedCopy;
+    const notUploaded = () => {
+      if (uploading) console.log('\nNo se ha subido nada a IkasBot: corrige antes los errores.');
+    };
+    // 6. Proyectos de TypeScript con convertir-js.mjs: también la versión en JavaScript (ikasbot/alumnado-js/)
+    if (withMarks && existsSync('convertir-js.mjs')) {
+      if (failed) {
+        console.log('\nNo se ha generado la versión en JavaScript: corrige antes los errores de la de TypeScript.');
+        notUploaded();
+        process.exit(1);
+      }
+      console.log('\n▶ Versión en JavaScript (convertir-js.mjs)');
+      const js = spawnSync(process.execPath, ['convertir-js.mjs'], { stdio: 'inherit' });
+      if (js.status !== 0) {
+        notUploaded();
+        process.exit(1);
+      }
+      process.exit(uploading ? await upload(rows.filter((r) => !only.length || only.includes(r.code)), base, force) : 0);
+    }
     if (withMarks) console.log('La copia del alumnado está en ikasbot/alumnado/: cópiala a mano a su repositorio.');
-    process.exit(rows.some((r) => r.tests === '—') || failedCopy ? 1 : 0);
+    if (failed) {
+      notUploaded();
+      process.exit(1);
+    }
+    process.exit(uploading ? await upload(rows.filter((r) => !only.length || only.includes(r.code)), base, force) : 0);
+  }
+
+  /**
+   * --subir: crea o actualiza en IkasBot cada tarea con su título, tema, enunciado, tests (del junit) y huellas.
+   * @param {object[]} rows  las del resumen de --preparar
+   * @param {string} studentBase  la copia del alumnado ('ikasbot/alumnado/') si hay marcas: las huellas y el enunciado, de allí
+   * @returns {Promise<number>} el código de salida
+   */
+  async function upload(rows, studentBase, force) {
+    loadEnv();
+    const token = process.env.IKASBOT_TOKEN_DOCENTE;
+    const url = (process.env.IKASBOT_URL || config.url || '').replace(/\/$/, '');
+    console.log('');
+    if (!token || !token.startsWith('ikb_')) {
+      fail(
+        'Falta tu token de profesorado. Créalo en IkasBot (Perfil → Tokens de API, en un curso en el que seas LI o TA)\n' +
+          '  y ponlo en el .env de este proyecto: IKASBOT_TOKEN_DOCENTE=ikb_…',
+      );
+    }
+    if (!/^https?:\/\//.test(url) || /\/\/ikasbot\.example\.com\b/.test(url)) fail('Falta la dirección de IkasBot: "url" en ikasbot.json (o IKASBOT_URL en .env).');
+    const fromCopy = (f) => (existsSync(studentBase + f) ? studentBase + f : f);
+    console.log(`▶ Subiendo ${rows.length === 1 ? '1 tarea' : `${rows.length} tareas`} a ${url}`);
+    let errors = 0;
+    let courseId = null;
+    for (const r of rows) {
+      const t = r.task;
+      let statement;
+      if (t.enunciado) {
+        statement = readFileSync(fromCopy(t.enunciado), 'utf8');
+        const local = [...statement.matchAll(/!\[[^\]]*\]\(\s*<?([^)\s>]+)|<img\b[^>]*\bsrc=["']([^"']+)/gi)].map((m) => m[1] || m[2]).filter((src) => !/^(https?:|data:)/i.test(src));
+        if (local.length) console.log(`  ⚠ ${r.code}: el enunciado usa imágenes locales (${local.slice(0, 2).join(', ')}${local.length > 2 ? '…' : ''}), que no se verán en IkasBot: súbelas a una web y usa su URL`);
+      }
+      const payload = {
+        title: t.titulo || r.code,
+        topic: t.tema ?? config.tema,
+        statement,
+        junit: readFileSync(`ikasbot/junit/${r.code}.xml`, 'utf8'),
+        testFiles: testsOf(t).map((f) => ({ path: f, hash: testHash(fromCopy(f)) })),
+        force,
+      };
+      const res = await fetch(`${url}/api/tasks/sync/${encodeURIComponent(r.code)}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((e) => fail(`No se puede conectar con ${url}: ${e.message}`));
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) fail('IkasBot no acepta tu token de profesorado: puede que esté revocado. Crea otro en Perfil → Tokens de API.');
+      if (res.status === 403) fail(body.error || 'Este token no sirve para subir tareas.');
+      if (!res.ok) {
+        errors += 1;
+        console.log(`  ${red('✗')} ${r.code}: ${body.error || `Error ${res.status}`}`);
+        continue;
+      }
+      const d = body.data;
+      courseId ??= d.task.courseId;
+      const topic = d.topicCreated ? `«${d.task.topicName}» (tema nuevo, oculto)` : `«${d.task.topicName}»`;
+      if (d.action === 'created') console.log(`  ${green('✓')} ${r.code}: creada, oculta, en ${topic}`);
+      else if (d.action === 'updated') console.log(`  ${green('✓')} ${r.code}: actualizada (${d.changes.join(', ')})${d.changes.includes('tema') ? `, ahora en ${topic}` : ''}`);
+      else console.log(`  · ${r.code}: sin cambios`);
+    }
+    if (courseId) console.log(`\nRevísalas en ${url}/cursos/${courseId}: las fechas, la visibilidad y los recursos se ponen allí.`);
+    if (errors) console.log(`\n${red('✗')} ${errors === 1 ? '1 tarea no se ha subido' : `${errors} tareas no se han subido`}: mira el motivo arriba.`);
+    return errors ? 1 : 0;
   }
 
   /* ---------- Alumnado: probar, vigilar y entregar ----------
@@ -637,10 +769,11 @@ ikasbot/ es solo para ti: está en .gitignore y no va al repositorio del alumnad
     const cases = junitCases(readFileSync(junit, 'utf8'));
     rmSync(junit, { force: true });
     const passed = cases.filter((c) => c.passed);
-    console.log(`\n${passed.length === cases.length ? '✓' : '✗'} ${code}: ${passed.length}/${cases.length} tests superados (no se ha entregado nada)`);
-    for (const c of cases) console.log(`  ${c.passed ? '✓' : '✗'} ${c.name}`);
+    const allPassed = cases.length > 0 && passed.length === cases.length;
+    console.log(`\n${mark(allPassed)} ${code}: ${(allPassed ? green : red)(`${passed.length}/${cases.length}`)} tests superados (no se ha entregado nada)`);
+    for (const c of cases) console.log(`  ${mark(c.passed)} ${c.passed ? c.name : red(c.name)}`);
     console.log(`\nAl entregar se ejecuta esto mismo: npm run entregar ${code}`);
-    process.exit(cases.length && passed.length === cases.length ? 0 : 1);
+    process.exit(allPassed ? 0 : 1);
   }
 
   // Vigilar: el modo watch de Vitest con el mismo comando (sin el junit). Otros runners no lo traen de serie.
@@ -659,21 +792,7 @@ ikasbot/ es solo para ti: está en .gitignore y no va al repositorio del alumnad
   }
 
   // Entregar
-  // El .env nunca debe estar en git: el token es como una contraseña
-  if (git('ls-files .env')) {
-    fail(
-      'Tu archivo .env está subido a git y tu token es visible.\n' +
-        '  1. En IkasBot, Perfil → Tokens de API: revoca ese token y crea otro.\n' +
-        '  2. Sácalo de git: git rm --cached .env && git commit -m "Quita .env"\n' +
-        '  3. Comprueba que .gitignore contiene la línea .env',
-    );
-  }
-  if (existsSync('.env')) {
-    for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
-      const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/i);
-      if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
-    }
-  }
+  loadEnv();
   const token = process.env.IKASBOT_TOKEN;
   const base = (process.env.IKASBOT_URL || config.url || '').replace(/\/$/, '');
   if (!token || !token.startsWith('ikb_')) {
@@ -708,9 +827,9 @@ ikasbot/ es solo para ti: está en .gitignore y no va al repositorio del alumnad
   // 4. Resultado
   const d = body.data;
   const pct = (s) => (s == null ? '—' : `${Math.round(s * 100)} %`);
-  console.log(`\n✓ Intento ${d.attemptNo} entregado${d.isLate ? ' (fuera de plazo)' : ''}`);
-  if (d.result.total != null) console.log(`  Tests: ${d.result.passed}/${d.result.total} · nota ${pct(d.score)}`);
-  if (d.result.failed?.length) console.log(`  Sin superar: ${d.result.failed.join(', ')}`);
+  console.log(`\n${green('✓')} Intento ${d.attemptNo} entregado${d.isLate ? ' (fuera de plazo)' : ''}`);
+  if (d.result.total != null) console.log(`  Tests: ${(d.result.passed === d.result.total ? green : red)(`${d.result.passed}/${d.result.total}`)} · nota ${pct(d.score)}`);
+  if (d.result.failed?.length) console.log(`  ${red('✗')} Sin superar: ${red(d.result.failed.join(', '))}`);
   for (const w of d.result.warnings || []) console.log(`  ⚠ ${w}`);
   console.log(d.best ? `  Tu mejor intento: #${d.best.attemptNo} (${pct(d.best.score)})` : '  Todavía no tienes ningún intento dentro de plazo.');
 }

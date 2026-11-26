@@ -2,6 +2,7 @@
   "url": "https://ikasbot2.tbfsb.com",
   "comando": "npx vitest run {tests} --reporter=default --reporter=junit --outputFile.junit=junit.xml",
   "repositorio": "https://github.com/ldme/mazmorra-react-js.git",
+  "tema": "React · La Mazmorra",
   "tareas": {
     "react-01": {
       "titulo": "Componentes y props",
@@ -12,7 +13,8 @@
         "src/componentes/HeroCard.jsx",
         "src/componentes/Panel.jsx",
         "src/componentes/Stat.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-01.md"
     },
     "react-02": {
       "titulo": "Eventos y estado",
@@ -22,7 +24,8 @@
       "codigo": [
         "src/componentes/BotonAccion.jsx",
         "src/componentes/Combate.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-02.md"
     },
     "react-03": {
       "titulo": "Listas y subir el estado",
@@ -33,7 +36,8 @@
         "src/componentes/Inventario.jsx",
         "src/componentes/Mochila.jsx",
         "src/componentes/ObjetoItem.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-03.md"
     },
     "react-04": {
       "titulo": "Formularios",
@@ -42,7 +46,8 @@
       ],
       "codigo": [
         "src/componentes/CrearHeroe.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-04.md"
     },
     "react-05": {
       "titulo": "Efectos y peticiones a APIs",
@@ -53,7 +58,8 @@
         "src/componentes/Bestiario.jsx",
         "src/componentes/Diario.jsx",
         "src/componentes/Taberna.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-05.md"
     },
     "react-06": {
       "titulo": "React Router",
@@ -65,7 +71,8 @@
         "src/paginas/Layout.jsx",
         "src/paginas/PaginaBestiario.jsx",
         "src/rutas.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-06.md"
     },
     "react-07": {
       "titulo": "Context, useReducer, useRef y hooks propios",
@@ -79,7 +86,8 @@
         "src/hooks/useLocalStorage.js",
         "src/hooks/useMonedero.js",
         "src/logica/monedero.js"
-      ]
+      ],
+      "enunciado": "enunciados/react-07.md"
     },
     "react-08": {
       "titulo": "Actions de React 19",
@@ -90,7 +98,8 @@
         "src/componentes/BotonEnviar.jsx",
         "src/componentes/Inscripcion.jsx",
         "src/componentes/Rumores.jsx"
-      ]
+      ],
+      "enunciado": "enunciados/react-08.md"
     }
   }
 }
