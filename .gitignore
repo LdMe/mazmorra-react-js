@@ -1,0 +1,12 @@
+node_modules
+dist
+*.local
+.env
+junit.xml
+.rescate/
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+# Solo para el profesorado (--preparar): no va al repositorio del alumnado
+ikasbot/

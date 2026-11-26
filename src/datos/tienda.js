@@ -1,0 +1,86 @@
+/** Lo que se vende en la tienda, una unidad de cada. El precio es su valor. Mejoran al héroe según su rareza (ver logica/objetos). */
+export const articulosTienda = [
+  {
+    id: 'tienda-1',
+    nombre: 'Botas de cuero',
+    icono: '🥾',
+    tipo: 'armadura',
+    rareza: 'comun',
+    valor: 30,
+  },
+  {
+    id: 'tienda-2',
+    nombre: 'Daga de acero',
+    icono: '🔪',
+    tipo: 'arma',
+    rareza: 'comun',
+    valor: 40,
+  },
+  {
+    id: 'tienda-3',
+    nombre: 'Escudo de hierro',
+    icono: '🛡️',
+    tipo: 'armadura',
+    rareza: 'comun',
+    valor: 45,
+  },
+  { id: 'tienda-4', nombre: 'Arco de caza', icono: '🏹', tipo: 'arma', rareza: 'comun', valor: 80 },
+  {
+    id: 'tienda-5',
+    nombre: 'Yelmo del centinela',
+    icono: '⛑️',
+    tipo: 'armadura',
+    rareza: 'rara',
+    valor: 220,
+  },
+  {
+    id: 'tienda-6',
+    nombre: 'Lanza de plata',
+    icono: '🗡️',
+    tipo: 'arma',
+    rareza: 'rara',
+    valor: 260,
+  },
+  {
+    id: 'tienda-7',
+    nombre: 'Capa de invisibilidad',
+    icono: '🧥',
+    tipo: 'armadura',
+    rareza: 'epica',
+    valor: 550,
+  },
+  {
+    id: 'tienda-8',
+    nombre: 'Martillo de guerra',
+    icono: '🔨',
+    tipo: 'arma',
+    rareza: 'epica',
+    valor: 600,
+  },
+  {
+    id: 'tienda-9',
+    nombre: 'Armadura de escamas de dragón',
+    icono: '🐉',
+    tipo: 'armadura',
+    rareza: 'legendaria',
+    valor: 1400,
+  },
+  {
+    id: 'tienda-10',
+    nombre: 'Espada de la aurora',
+    icono: '🌅',
+    tipo: 'arma',
+    rareza: 'legendaria',
+    valor: 1500,
+  },
+];
+
+/** La poción que se vende en el monedero, tantas como quieras. El precio es su valor. */
+export const pocionTienda = {
+  id: 'tienda-pocion',
+  nombre: 'Poción de vida',
+  icono: '🧪',
+  tipo: 'pocion',
+  rareza: 'comun',
+  valor: 10,
+};

@@ -1,0 +1,32 @@
+export const heroes = [
+  {
+    nombre: 'Aria',
+    clase: 'Guerrera',
+    nivel: 3,
+    avatar: '🛡️',
+    vida: 100,
+    vidaMax: 100,
+    ataque: 12,
+    defensa: 5,
+  },
+  {
+    nombre: 'Merlín',
+    clase: 'Mago',
+    nivel: 4,
+    avatar: '🧙',
+    vida: 70,
+    vidaMax: 70,
+    ataque: 18,
+    defensa: 2,
+  },
+  {
+    nombre: 'Sombra',
+    clase: 'Pícaro',
+    nivel: 2,
+    avatar: '🗡️',
+    vida: 85,
+    vidaMax: 85,
+    ataque: 14,
+    defensa: 4,
+  },
+];

@@ -1,0 +1,60 @@
+/**
+ * Las fichas del bestiario: los mismos monstruos que devuelve la «API» (public/api/monstruos.json).
+ * Las páginas del bestiario (react-06) las usan directamente, sin fetch, para centrarse en las rutas.
+ */
+export const fichas = [
+  {
+    id: 1,
+    nombre: 'Goblin',
+    avatar: '👺',
+    vidaMax: 40,
+    ataque: 9,
+    defensa: 2,
+    descripcion: 'Pequeño, ruidoso y muy pesado en grupo.',
+  },
+  {
+    id: 2,
+    nombre: 'Esqueleto',
+    avatar: '💀',
+    vidaMax: 55,
+    ataque: 11,
+    defensa: 4,
+    descripcion: 'Se le oye llegar: clac, clac, clac.',
+  },
+  {
+    id: 3,
+    nombre: 'Slime',
+    avatar: '🟢',
+    vidaMax: 30,
+    ataque: 6,
+    defensa: 1,
+    descripcion: 'Pegajoso. No lo pises.',
+  },
+  {
+    id: 4,
+    nombre: 'Lobo de las sombras',
+    avatar: '🐺',
+    vidaMax: 65,
+    ataque: 14,
+    defensa: 3,
+    descripcion: 'Caza de noche y nunca va solo.',
+  },
+  {
+    id: 5,
+    nombre: 'Golem de piedra',
+    avatar: '🗿',
+    vidaMax: 110,
+    ataque: 12,
+    defensa: 9,
+    descripcion: 'Lento, pero casi indestructible.',
+  },
+  {
+    id: 6,
+    nombre: 'Dragón',
+    avatar: '🐉',
+    vidaMax: 150,
+    ataque: 25,
+    defensa: 8,
+    descripcion: 'El jefe final. Lleva pociones.',
+  },
+];

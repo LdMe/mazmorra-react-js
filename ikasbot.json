@@ -1,0 +1,96 @@
+{
+  "url": "https://ikasbot2.tbfsb.com",
+  "comando": "npx vitest run {tests} --reporter=default --reporter=junit --outputFile.junit=junit.xml",
+  "repositorio": "https://github.com/ldme/mazmorra-react-js.git",
+  "tareas": {
+    "react-01": {
+      "titulo": "Componentes y props",
+      "tests": [
+        "tests/react-01/componentes.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/HeroCard.jsx",
+        "src/componentes/Panel.jsx",
+        "src/componentes/Stat.jsx"
+      ]
+    },
+    "react-02": {
+      "titulo": "Eventos y estado",
+      "tests": [
+        "tests/react-02/combate.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/BotonAccion.jsx",
+        "src/componentes/Combate.jsx"
+      ]
+    },
+    "react-03": {
+      "titulo": "Listas y subir el estado",
+      "tests": [
+        "tests/react-03/inventario.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/Inventario.jsx",
+        "src/componentes/Mochila.jsx",
+        "src/componentes/ObjetoItem.jsx"
+      ]
+    },
+    "react-04": {
+      "titulo": "Formularios",
+      "tests": [
+        "tests/react-04/crear-heroe.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/CrearHeroe.jsx"
+      ]
+    },
+    "react-05": {
+      "titulo": "Efectos y peticiones a APIs",
+      "tests": [
+        "tests/react-05/efectos.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/Bestiario.jsx",
+        "src/componentes/Diario.jsx",
+        "src/componentes/Taberna.jsx"
+      ]
+    },
+    "react-06": {
+      "titulo": "React Router",
+      "tests": [
+        "tests/react-06/rutas.test.jsx"
+      ],
+      "codigo": [
+        "src/paginas/FichaMonstruo.jsx",
+        "src/paginas/Layout.jsx",
+        "src/paginas/PaginaBestiario.jsx",
+        "src/rutas.jsx"
+      ]
+    },
+    "react-07": {
+      "titulo": "Context, useReducer, useRef y hooks propios",
+      "tests": [
+        "tests/react-07/estado-compartido.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/Monedero.jsx",
+        "src/componentes/Tienda.jsx",
+        "src/contexto/MonederoProvider.jsx",
+        "src/hooks/useLocalStorage.js",
+        "src/hooks/useMonedero.js",
+        "src/logica/monedero.js"
+      ]
+    },
+    "react-08": {
+      "titulo": "Actions de React 19",
+      "tests": [
+        "tests/react-08/actions.test.jsx"
+      ],
+      "codigo": [
+        "src/componentes/BotonEnviar.jsx",
+        "src/componentes/Inscripcion.jsx",
+        "src/componentes/Rumores.jsx"
+      ]
+    }
+  }
+}

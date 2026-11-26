@@ -1,0 +1,997 @@
+/* Estilos globales de La Mazmorra de React. No hace falta tocarlos para los ejercicios.
+   Estilo: RPG de los 90. Muros de ladrillo, ventanas de piedra con bisel (luz arriba a la
+   izquierda, sombra abajo a la derecha), letra de píxeles y tres acentos: la luz de las
+   antorchas, el musgo y la magia. */
+
+/* Letras de píxeles, instaladas con npm (funcionan sin conexión) */
+@import '@fontsource/press-start-2p/400.css';
+@import '@fontsource/dotgothic16/latin-400.css';
+
+:root {
+  /* Piedra */
+  --oscuro: #141216;
+  --oscuro-2: #1d1a20;
+  --piedra-clara: #57525d;
+  --piedra-oscura: #3a3640;
+  --hueco: #242128;
+  --bisel-luz: #a7a1b0;
+  --bisel-sombra: #121013;
+  --borde: #a7a1b0;
+  --sombra: #000;
+
+  /* Texto */
+  --texto: #f1ede8;
+  --texto-suave: #b9b3bf;
+
+  /* Acentos */
+  --antorcha: #ff8a3d;
+  --musgo: #9be36b;
+  --magia: #6fd3ff;
+  --naranja: #ffb347;
+
+  /* Vida */
+  --vida-alta: #6ee36b;
+  --vida-media: #ffe14d;
+  --vida-baja: #ff4d5e;
+
+  --pixel: 'Press Start 2P', ui-monospace, monospace;
+  --letra: 'DotGothic16', ui-monospace, monospace;
+
+  font-family: var(--letra);
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--texto);
+  background-color: #2b272e;
+  /* Muro de ladrillos (un dibujo SVG que se repite), oscurecido por los bordes */
+  background-image:
+    radial-gradient(ellipse at 50% 30%, transparent 30%, rgb(10 8 12 / 0.85) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='32' shape-rendering='crispEdges'%3E%3Crect width='64' height='32' fill='%231b181d'/%3E%3Crect x='0' y='0' width='30' height='14' fill='%23443f48'/%3E%3Crect x='32' y='0' width='30' height='14' fill='%233e3942'/%3E%3Crect x='0' y='16' width='14' height='14' fill='%233b3640'/%3E%3Crect x='16' y='16' width='30' height='14' fill='%2348424c'/%3E%3Crect x='48' y='16' width='16' height='14' fill='%233b3640'/%3E%3Crect x='0' y='0' width='30' height='2' fill='%23524c57'/%3E%3Crect x='32' y='0' width='30' height='2' fill='%234b4550'/%3E%3Crect x='16' y='16' width='30' height='2' fill='%23554f5a'/%3E%3Crect x='0' y='16' width='14' height='2' fill='%23474149'/%3E%3Crect x='48' y='16' width='16' height='2' fill='%23474149'/%3E%3C/svg%3E");
+  background-size:
+    100% 100%,
+    64px 32px;
+  background-attachment: fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: none;
+  font-variant-ligatures: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.3;
+  font-weight: 400;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--musgo);
+  outline-offset: 2px;
+}
+
+/* Una «ventana» de piedra: degradado gris, bisel claro arriba a la izquierda y oscuro abajo */
+.panel,
+.heroe-card,
+.luchador,
+.objeto,
+.bestiario__monstruo,
+.ficha-enlace,
+.registro {
+  background: linear-gradient(180deg, var(--piedra-clara), var(--piedra-oscura));
+  border: 3px solid;
+  border-color: var(--bisel-luz) var(--bisel-sombra) var(--bisel-sombra) var(--bisel-luz);
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 2px var(--sombra),
+    6px 6px 0 rgb(0 0 0 / 0.45);
+}
+
+/* Huecos tallados en la piedra (dentro de una ventana): bisel al revés */
+.heroe-card,
+.luchador,
+.objeto,
+.bestiario__monstruo,
+.ficha-enlace,
+.registro {
+  background: var(--hueco);
+  border-width: 2px;
+  border-color: var(--bisel-sombra) #6d6775 #6d6775 var(--bisel-sombra);
+  box-shadow: none;
+}
+
+/* ---------- Estructura ---------- */
+.app {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.app__cabecera {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app__cabecera h1 {
+  font-family: var(--pixel);
+  font-size: clamp(1.1rem, 3.4vw, 1.9rem);
+  color: var(--texto);
+  text-shadow:
+    3px 3px 0 var(--sombra),
+    0 0 14px rgb(255 138 61 / 0.65);
+  letter-spacing: 0.04em;
+}
+
+.app__cabecera p {
+  color: var(--texto-suave);
+  margin: 0.9rem 0 0;
+}
+
+.app__contenido {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+  align-items: start;
+}
+
+/* ---------- Panel ---------- */
+.panel {
+  padding: 1.1rem 1.2rem 1.2rem;
+}
+
+.panel__titulo {
+  font-family: var(--pixel);
+  font-size: 0.7rem;
+  color: var(--antorcha);
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 0 var(--sombra);
+}
+
+/* ---------- Pendiente: una casilla «en obras» ---------- */
+.pendiente {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border: 2px dashed var(--antorcha);
+  color: var(--antorcha);
+  background: repeating-linear-gradient(-45deg, rgb(255 79 216 / 0.14) 0 6px, transparent 6px 12px);
+  font-size: 0.95rem;
+}
+
+/* ---------- Tarjeta de héroe ---------- */
+.heroe-card {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  box-shadow: none;
+  border-width: 2px;
+  background: var(--hueco);
+}
+
+.heroe-card.derrotado {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.heroe-card__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.heroe-card__avatar {
+  font-size: 2.6rem;
+  filter: drop-shadow(3px 3px 0 var(--sombra));
+}
+
+.heroe-card__nombre {
+  font-family: var(--pixel);
+  font-size: 1rem;
+}
+
+.heroe-card__subtitulo {
+  margin: 0.3rem 0 0;
+  color: var(--texto-suave);
+}
+
+.heroe-card__stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.heroe-card__derrotado {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 0.75rem;
+  color: var(--vida-baja);
+}
+
+.stat {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Barra de vida: segmentos, como en los juegos de 8 bits ---------- */
+.barra-vida {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.barra-vida__marco {
+  flex: 1;
+  height: 14px;
+  background: var(--sombra);
+  border: 2px solid var(--borde);
+  padding: 1px;
+}
+
+.barra-vida__relleno {
+  height: 100%;
+  /* Huecos negros cada 6 px: la barra se ve por bloques */
+  mask-image: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px);
+  transition: width 0.3s steps(6);
+}
+
+.barra-vida__relleno--alta {
+  background: var(--vida-alta);
+}
+
+.barra-vida__relleno--media {
+  background: var(--vida-media);
+}
+
+.barra-vida__relleno--baja {
+  background: var(--vida-baja);
+}
+
+.barra-vida__texto {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+  min-width: 7.5ch;
+  text-align: right;
+}
+
+/* ---------- Combate ---------- */
+.combate {
+  display: grid;
+  gap: 1rem;
+}
+
+.combate__arena {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.combate__vs {
+  font-family: var(--pixel);
+  font-size: 0.8rem;
+  color: var(--antorcha);
+  text-shadow: 2px 2px 0 var(--sombra);
+}
+
+.luchador {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 0.8rem 0.6rem;
+  box-shadow: none;
+  border-width: 2px;
+  background: var(--hueco);
+}
+
+.luchador__avatar {
+  font-size: 2.6rem;
+  filter: drop-shadow(3px 3px 0 var(--sombra));
+}
+
+.luchador__nombre {
+  font-weight: 400;
+}
+
+.luchador--caido {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.combate__resultado {
+  margin: 0;
+  text-align: center;
+  font-family: var(--pixel);
+  font-size: 1rem;
+  color: var(--musgo);
+  text-shadow: 3px 3px 0 var(--sombra);
+  animation: parpadeo 1s steps(2) 3;
+}
+
+@keyframes parpadeo {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.combate__acciones {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+}
+
+/* Botones de menú: al pasar por encima aparece el cursor ▶ */
+.boton-accion,
+.cofre,
+.bestiario__luchar,
+.tienda__comprar,
+.objeto__vender,
+.boton-secundario,
+.inventario__filtro {
+  position: relative;
+  color: var(--texto);
+  background: linear-gradient(180deg, #67616e, #45404b);
+  border: 3px solid;
+  border-color: var(--bisel-luz) var(--bisel-sombra) var(--bisel-sombra) var(--bisel-luz);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--sombra);
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+}
+
+.boton-accion:hover:not(:disabled),
+.cofre:hover:not(:disabled),
+.bestiario__luchar:hover:not(:disabled),
+.tienda__comprar:hover:not(:disabled),
+.boton-secundario:hover:not(:disabled) {
+  background: linear-gradient(180deg, #78717f, #514b57);
+}
+
+.boton-accion:hover:not(:disabled)::before,
+.cofre:hover:not(:disabled)::before,
+.bestiario__luchar:hover:not(:disabled)::before,
+.tienda__comprar:hover:not(:disabled)::before {
+  content: '▶';
+  position: absolute;
+  left: -1.3em;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--musgo);
+  text-shadow: 2px 2px 0 var(--sombra);
+}
+
+.boton-accion:active:not(:disabled),
+.cofre:active:not(:disabled),
+.bestiario__luchar:active:not(:disabled),
+.tienda__comprar:active:not(:disabled),
+.boton-secundario:active:not(:disabled) {
+  border-color: var(--bisel-sombra) var(--bisel-luz) var(--bisel-luz) var(--bisel-sombra);
+}
+
+.boton-accion:disabled,
+.cofre:disabled,
+.bestiario__luchar:disabled,
+.tienda__comprar:disabled,
+.boton-secundario:disabled {
+  cursor: not-allowed;
+  color: var(--texto-suave);
+  border-color: var(--texto-suave);
+  opacity: 0.6;
+}
+
+.boton-secundario {
+  margin-top: 0.9rem;
+  font-size: 0.95rem;
+}
+
+.registro {
+  margin: 0;
+  padding: 0.7rem 0.8rem 0.7rem 2rem;
+  max-height: 180px;
+  overflow-y: auto;
+  box-shadow: none;
+  border-width: 2px;
+  background: var(--sombra);
+  color: var(--musgo);
+  font-size: 0.95rem;
+}
+
+.registro--vacio {
+  padding-left: 0.8rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- Mochila e inventario ---------- */
+.mochila,
+.inventario {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.cofre {
+  justify-self: start;
+  color: var(--oscuro);
+  background: var(--musgo);
+}
+
+.cofre:hover:not(:disabled) {
+  background: #c2f5a1;
+}
+
+.inventario__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inventario__filtro {
+  padding: 0.15rem 0.7rem;
+  font-size: 0.95rem;
+}
+
+.inventario__filtro[aria-pressed='true'] {
+  color: var(--oscuro);
+  background: var(--musgo);
+  border-color: var(--bisel-sombra) var(--bisel-luz) var(--bisel-luz) var(--bisel-sombra);
+}
+
+.inventario__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.inventario__vacio {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+.objeto {
+  --color-rareza: #c9cbe0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.7rem;
+  border-width: 2px;
+  box-shadow: inset 6px 0 0 var(--color-rareza);
+  padding-left: 1.1rem;
+  background: var(--hueco);
+}
+
+.objeto--rara {
+  --color-rareza: var(--magia);
+}
+
+.objeto--epica {
+  --color-rareza: var(--antorcha);
+}
+
+.objeto--legendaria {
+  --color-rareza: var(--naranja);
+}
+
+.objeto__icono {
+  font-size: 1.3rem;
+}
+
+.objeto__rareza {
+  font-size: 0.85rem;
+  color: var(--color-rareza);
+}
+
+.objeto__valor {
+  font-variant-numeric: tabular-nums;
+  color: var(--musgo);
+}
+
+
+
+/* ---------- Formularios ---------- */
+.crear-heroe,
+.gremio-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.campo {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.campo input,
+.campo select,
+.diario textarea,
+.buscador,
+.rumores__form input {
+  color: var(--texto);
+  background: var(--sombra);
+  border: 2px solid var(--borde);
+  border-radius: 2px;
+  padding: 0.45rem 0.6rem;
+}
+
+.campo input[aria-invalid='true'] {
+  border-color: var(--vida-baja);
+}
+
+.campo--avatares {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  border: 2px solid var(--borde);
+  border-radius: 2px;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.campo--avatares legend {
+  color: var(--texto-suave);
+  padding: 0 0.3rem;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.avatar input {
+  accent-color: var(--antorcha);
+}
+
+.campo--puntos {
+  grid-template-columns: auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.campo--puntos input {
+  width: 100%;
+}
+
+.campo__error {
+  margin: 0;
+  color: var(--vida-baja);
+}
+
+.crear-heroe__puntos,
+.crear-heroe__vista,
+.crear-heroe__creado {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+.crear-heroe__creado {
+  color: var(--vida-alta);
+}
+
+.crear-heroe .boton-accion,
+.gremio-form .boton-accion {
+  justify-self: start;
+}
+
+/* ---------- Bestiario ---------- */
+.bestiario {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.4rem;
+  display: grid;
+  gap: 0.5rem;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.bestiario__monstruo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-width: 2px;
+  box-shadow: none;
+  background: var(--hueco);
+}
+
+.bestiario__avatar {
+  font-size: 1.8rem;
+}
+
+.bestiario__info {
+  display: grid;
+}
+
+.bestiario__info small {
+  color: var(--texto-suave);
+}
+
+.bestiario__luchar {
+  padding: 0.25rem 0.7rem;
+  color: var(--oscuro);
+  background: var(--antorcha);
+}
+
+.bestiario__luchar:hover:not(:disabled) {
+  background: #ffab73;
+}
+
+.bestiario__estado {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+.bestiario__estado--error {
+  color: var(--vida-baja);
+}
+
+/* ---------- Taberna y diario ---------- */
+.taberna {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+}
+
+.taberna p {
+  margin: 0;
+}
+
+.taberna__fuego {
+  font-size: 2.6rem;
+  filter: drop-shadow(3px 3px 0 var(--sombra));
+}
+
+.taberna__contador {
+  font-variant-numeric: tabular-nums;
+  color: var(--musgo);
+}
+
+.taberna__vida {
+  color: var(--texto-suave);
+}
+
+.diario {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.diario textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.diario small {
+  color: var(--texto-suave);
+}
+
+/* ---------- Menú y páginas (react-06) ---------- */
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.menu__enlace {
+  position: relative;
+  padding: 0.4rem 0.9rem;
+  color: var(--texto);
+  text-decoration: none;
+  background: linear-gradient(180deg, #67616e, #45404b);
+  border: 3px solid;
+  border-color: var(--bisel-luz) var(--bisel-sombra) var(--bisel-sombra) var(--bisel-luz);
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px var(--sombra),
+    4px 4px 0 rgb(0 0 0 / 0.45);
+}
+
+.menu__enlace:hover {
+  background: linear-gradient(180deg, #78717f, #514b57);
+}
+
+.menu__enlace--activo,
+.menu__enlace--activo:hover {
+  color: var(--oscuro);
+  background: var(--musgo);
+  border-color: var(--bisel-sombra) #d6ffbf #d6ffbf var(--bisel-sombra);
+}
+
+.pagina {
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.enlace {
+  color: var(--musgo);
+}
+
+.buscador {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.fichas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ficha-enlace {
+  display: block;
+  padding: 0.55rem 0.9rem;
+  border-width: 2px;
+  box-shadow: none;
+  background: var(--hueco);
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+a.ficha-enlace:hover {
+  background: var(--piedra-clara);
+}
+
+a.ficha-enlace:hover::after {
+  content: ' ◀';
+  color: var(--musgo);
+}
+
+.fichas__vacio {
+  color: var(--texto-suave);
+}
+
+.ficha {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.ficha__avatar {
+  font-size: 4rem;
+  margin: 0;
+  filter: drop-shadow(4px 4px 0 var(--sombra));
+}
+
+.ficha__nombre {
+  font-family: var(--pixel);
+  font-size: 1rem;
+}
+
+.ficha__descripcion,
+.ficha__stats {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+.ficha .barra-vida {
+  width: 100%;
+}
+
+.ficha__acciones {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ficha__error {
+  color: var(--vida-baja);
+}
+
+.perdido {
+  text-align: center;
+}
+
+.perdido__icono {
+  font-size: 3rem;
+  margin: 0;
+}
+
+/* ---------- Monedero y tienda (react-07) ---------- */
+.monedero {
+  display: grid;
+  gap: 1rem;
+}
+
+.monedero__oro {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.monedero__oro strong {
+  font-family: var(--pixel);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--musgo);
+}
+
+.monedero__ingreso {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.monedero__ingreso .campo {
+  flex: 1 1 12rem;
+}
+
+.tienda {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.4rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.objeto__texto {
+  display: grid;
+  min-width: 0;
+}
+
+.objeto__detalle {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.objeto__vender {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.tienda__comprar {
+  padding: 0.2rem 0.7rem;
+  font-size: 0.95rem;
+}
+
+/* ---------- Gremio (react-08) ---------- */
+.gremio-form__mensaje {
+  margin: 0;
+  color: var(--vida-alta);
+}
+
+.gremio-form__mensaje--error {
+  color: var(--vida-baja);
+}
+
+.rumores {
+  display: grid;
+  gap: 1rem;
+}
+
+.rumores__lista {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.35rem;
+  list-style: '✦ ';
+}
+
+.rumores__lista ::marker {
+  color: var(--antorcha);
+}
+
+.rumor--enviando {
+  opacity: 0.55;
+}
+
+.rumor small {
+  color: var(--texto-suave);
+}
+
+.rumores__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.rumores__form input {
+  flex: 1 1 12rem;
+}
+
+/* ---------- Notas ---------- */
+.nota {
+  margin: 0.7rem 0 0;
+  font-size: 0.95rem;
+  color: var(--texto-suave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combate__resultado {
+    animation: none;
+  }
+
+  .barra-vida__relleno {
+    transition: none;
+  }
+}
+
+/* ---------- Que nada se salga de su caja (pantallas estrechas y textos largos) ---------- */
+.app__contenido > *,
+.panel,
+.panel__contenido,
+.campo,
+.gremio-form > *,
+.crear-heroe > *,
+.monedero > * {
+  min-width: 0;
+}
+
+.campo input,
+.campo select,
+.buscador,
+.rumores__form input,
+.diario textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.campo--puntos input {
+  width: 100%;
+}
+
+.objeto__nombre,
+.rumor,
+.nota,
+.gremio-form__mensaje {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  :root {
+    font-size: 16px;
+  }
+
+  .app {
+    padding: 1.25rem 0.6rem 3rem;
+  }
+
+  .panel {
+    padding: 0.9rem 0.8rem 1rem;
+  }
+
+  /* Sin sitio para el cursor ▶ a la izquierda de las listas */
+  .tienda,
+  .bestiario {
+    padding-left: 0;
+  }
+
+  .boton-accion:hover::before,
+  .cofre:hover::before,
+  .bestiario__luchar:hover::before,
+  .tienda__comprar:hover::before {
+    content: none;
+  }
+
+  .combate__arena {
+    gap: 0.4rem;
+  }
+
+  .combate__acciones {
+    gap: 0.75rem;
+  }
+}
